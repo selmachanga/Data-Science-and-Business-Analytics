@@ -1,1 +1,48 @@
+import os
+from pathlib import Path
+import pandas as pd
 
+# Columns we don't want to keep
+COLUMNS_TO_DROP = {
+    'description',
+    'neighborhood_overview',
+    'host_location',
+    'host_about',
+    'host_verifications',
+    'neighbourhood',
+    'neighborhood_overview',  # duplicated just in case
+}
+
+def process_listings_csv(file_path: Path) -> None:
+    """
+    Process a single listings CSV file:
+    - Extracts city name from the file name.
+    - Reads the CSV skipping unwanted columns.
+    - Saves a new CSV with the reduced set of columns.
+    """
+    # Extract city name from the file name (before the first underscore)
+    city_name = file_path.stem.split('_')[0]
+
+    # Read CSV, skipping columns in COLUMNS_TO_DROP
+    df = pd.read_csv(
+        file_path,
+        usecols=lambda col: col not in COLUMNS_TO_DROP  # more efficient than reading then dropping
+    )
+
+    # Build output path
+    new_file_path = file_path.with_name(f"{city_name}_listings_removedcolumns.csv")
+
+    # Save the processed DataFrame
+    df.to_csv(new_file_path, index=False)
+
+    print(f"Processed: {file_path.name} -> {new_file_path.name}")
+
+
+if __name__ == "__main__":
+    # Directory containing the listings CSV files
+    directory = Path(r"C:\Users\selma\Downloads\data project\Datasets\listing")
+
+    # Iterate over each CSV file in the directory
+    for file_path in directory.glob("*.csv"):
+        if file_path.is_file():
+            process_listings_csv(file_path)
