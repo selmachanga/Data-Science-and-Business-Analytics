@@ -1,3 +1,7 @@
+# As part of the ETL process, the project focused on identifying the predominant accommodation types, analyzing pricing trends, assessing booking volumes, and pinpointing peak demand periods for Airbnb short-term rentals across multiple European cities. 
+# First, define the critical processes, metrics, and their interrelationships, and then leverage this foundation to implement Python code to standardize and clean incoming datasets, before integrating them into Azure Data Factory.
+
+
 import os
 from pathlib import Path
 import pandas as pd
@@ -46,3 +50,6 @@ if __name__ == "__main__":
     for file_path in directory.glob("*.csv"):
         if file_path.is_file():
             process_listings_csv(file_path)
+
+
+# The report for this project can be found at the following website:https://selmachanga.my.canva.site/selma-changa
