@@ -1,0 +1,258 @@
+import random
+import sys
+from pathlib import Path
+import tkinter.messagebox as messagebox
+from typing import List
+
+
+# ---------------------- Configuration ---------------------- #
+
+# Path to the file that contains the list of words
+WORDLIST_PATH = Path("lista_palavrasG07.txt")
+
+MAX_TRIES = 6
+
+
+# ---------------------- Word Utilities ---------------------- #
+
+def load_words(filepath: Path = WORDLIST_PATH) -> List[str]:
+    """
+    Load a list of words from a text file.
+    Each line of the file should contain a single word.
+    """
+    if not filepath.exists():
+        messagebox.showerror(
+            "Error",
+            f"Word list file not found:\n{filepath.resolve()}"
+        )
+        sys.exit(1)
+
+    with filepath.open("r", encoding="utf-8") as file:
+        words = [line.strip() for line in file if line.strip()]
+
+    if not words:
+        messagebox.showerror(
+            "Error",
+            f"The word list file is empty:\n{filepath.resolve()}"
+        )
+        sys.exit(1)
+
+    return words
+
+
+def choose_random_word(words: List[str]) -> str:
+    """Choose a random word from the list and return it in uppercase."""
+    return random.choice(words).upper()
+
+
+# ---------------------- Hangman Drawing ---------------------- #
+
+def hangman(tries: int) -> str:
+    """
+    Return the ASCII art for the current hangman state based on the remaining tries.
+    """
+    stages = [
+        # Final stage: head, torso, both arms, both legs
+        """
+           --------
+           |      |
+           |      O      I'M DEAD!
+           |     \\|/
+           |      |
+           |     / \\
+           -
+        """,
+        # Head, torso, both arms, one leg
+        """
+           --------
+           |      |
+           |      O      Please don’t miss again!
+           |     \\|/
+           |      |
+           |     / 
+           -
+        """,
+        # Head, torso, both arms
+        """
+           --------
+           |      |
+           |      O      Think carefully!
+           |     \\|/
+           |      |
+           |      
+           -
+        """,
+        # Head, torso, one arm
+        """
+           --------
+           |      |
+           |      O      Calm down!
+           |     \\|
+           |      |
+           |     
+           -
+        """,
+        # Head and torso
+        """
+           --------
+           |      |
+           |      O      I'm getting scared...
+           |      |
+           |      |
+           |     
+           -
+        """,
+        # Head
+        """
+           --------
+           |      |
+           |      O      Not a good start!
+           |    
+           |      
+           |     
+           -
+        """,
+        # Initial empty gallows
+        """
+           --------
+           |      |
+           |      
+           |    
+           |      
+           |     
+           -
+        """
+    ]
+    # Ensure we don't crash if tries is outside expected range
+    tries = max(0, min(tries, len(stages) - 1))
+    return stages[tries]
+
+
+# ---------------------- Game Logic ---------------------- #
+
+def play(word: str) -> None:
+    """
+    Core game loop: receives a word and manages the player's guesses.
+    """
+    word = word.upper()
+    word_completion_status = "_" * len(word)
+    guessed = False
+    guessed_letters: List[str] = []
+    guessed_words: List[str] = []
+    tries = MAX_TRIES
+
+    number_of_letters_msg = f"Number of letters in the word to guess: {len(word)} letters"
+
+    print(hangman(tries))
+    print(number_of_letters_msg)
+    print(word_completion_status)
+    print("\n")
+
+    while not guessed and tries > 0:
+        guess = input("What is your guess? (Enter a letter or the complete word): ").upper().strip()
+
+        # Single letter guess
+        if len(guess) == 1 and guess.isalpha():
+            if guess in guessed_letters:
+                print(f"The letter '{guess}' has already been tried. Please choose another letter.")
+            elif guess not in word:
+                tries -= 1
+                guessed_letters.append(guess)
+                print(f"OOPS! The letter '{guess}' is not in the word.\nYou have {tries} attempts left.")
+            else:
+                print(f"GOOD! The letter '{guess}' is in the word!")
+                guessed_letters.append(guess)
+
+                # Reveal all positions of the guessed letter
+                word_as_list = list(word_completion_status)
+                for index, letter in enumerate(word):
+                    if letter == guess:
+                        word_as_list[index] = guess
+                word_completion_status = "".join(word_as_list)
+
+                if "_" not in word_completion_status:
+                    guessed = True
+
+        # Full word guess
+        elif len(guess) == len(word) and guess.isalpha():
+            if guess in guessed_words:
+                print(f"The word '{guess}' has already been tried.")
+            elif guess != word:
+                tries -= 1
+                guessed_words.append(guess)
+                print(f"OOPS! The word '{guess}' is not correct.\nYou have {tries} attempts left.")
+            else:
+                guessed = True
+                word_completion_status = word
+
+        else:
+            print("Invalid input. Please enter only letters, "
+                  "either a single letter or a full word with the correct length.")
+
+        # Status after each attempt
+        print(hangman(tries))
+        print()
+        print(number_of_letters_msg)
+        print(word_completion_status)
+        print(f"Letters already attempted: {guessed_letters}")
+        print()
+
+    # End of game
+    if guessed:
+        messagebox.showinfo("Result", f"Congratulations! You guessed the word: {word}!")
+        print("Congratulations! You guessed the word!")
+        print("       ___________      ")
+        print("      '._==_==_=_.'     ")
+        print("      .-\\:      /-.    ")
+        print("     | (|:.     |) |    ")
+        print("      '-|:.     |-'     ")
+        print("        \\::.    /      ")
+        print("         '::. .'        ")
+        print("           ) (          ")
+        print("         _.' '._        ")
+        print("        '-------'       ")
+    else:
+        messagebox.showinfo("Result", f"You have no attempts left. The correct word was {word}.")
+        print("    _______________         ")
+        print("   /               \\        ")
+        print("  /                 \\       ")
+        print(" /                   \\      ")
+        print(" |   XXXX     XXXX   |      ")
+        print(" |   XXXX     XXXX   |      ")
+        print(" |   XXX       XXX   |      ")
+        print(" |                   |      ")
+        print(" \\__      XXX      __/      ")
+        print("   |\\     XXX     /|        ")
+        print("   | |           | |        ")
+        print("   | I I I I I I I |        ")
+        print("   |  I I I I I I  |        ")
+        print("   \\_             _/        ")
+        print("     \\_         _/          ")
+        print("       \\_______/            ")
+
+
+# ---------------------- Main Entry Point ---------------------- #
+
+def main() -> None:
+    """
+    Entry point for the Hangman game.
+    """
+    messagebox.showinfo(
+        "Welcome to Hangman!",
+        "The goal of the game is to guess the letters that form the hidden word.\n"
+        "On each turn, you can guess a letter or try the full word.\n"
+        f"You have {MAX_TRIES} attempts.\nGood luck!"
+    )
+
+    words = load_words()
+    word = choose_random_word(words)
+    play(word)
+
+    while messagebox.askquestion("End of Game", "Do you want to play again?", icon="question") == "yes":
+        print("\n" + "-" * 100 + "\n")
+        word = choose_random_word(words)
+        play(word)
+
+
+if __name__ == "__main__":
+    main()
